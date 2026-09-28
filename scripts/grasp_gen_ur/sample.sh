@@ -1,5 +1,6 @@
 CKPT=$1
 OPT=$2
+EXTRA="${@:3}"  # 第 3 个参数起的所有额外 hydra override（如 dataset.active=real_dex gpu=1）
 
 if [ -z ${CKPT} ]
 then
@@ -18,7 +19,8 @@ then
                 model=unet_grasp \
                 task=grasp_gen_ur \
                 task.dataset.normalize_x=true \
-                task.dataset.normalize_x_trans=true
+                task.dataset.normalize_x_trans=true \
+                ${EXTRA}
 else
     echo -e "\033[1;32m[WITH] Physics-Guided Sampling Activated\033[0m"
     python sample.py hydra/job_logging=none hydra/hydra_logging=none \
@@ -30,5 +32,6 @@ else
                 task=grasp_gen_ur \
                 task.dataset.normalize_x=true \
                 task.dataset.normalize_x_trans=true \
-                optimizer=grasp_with_object 
+                optimizer=grasp_with_object \
+                ${EXTRA}
 fi

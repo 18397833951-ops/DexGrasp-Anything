@@ -1,0 +1,30 @@
+# 大文件目录：数据集和实验输出，不进 git
+data/
+outputs/
+*_bundle/
+
+# Python 编译缓存
+__pycache__/
+*.pyc
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
+
+# ===== 新增 =====
+# 数据集与实验输出（大文件，不进 git）
+graspdata/
+zgraspdata/
+
+# 模型权重与序列化结果
+*.pth
+*.pt
+*.pkl
+
+# 打包文件
+*.tar.gz
+*.zip
+
+# 第三方代码库（各自独立仓库，未作为 submodule 引入）
+src/

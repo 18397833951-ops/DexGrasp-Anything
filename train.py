@@ -88,6 +88,7 @@ def train(cfg: DictConfig) -> None:
     """
     if cfg.gpu is not None:
         device = f'cuda:{cfg.gpu}'
+        torch.cuda.set_device(cfg.gpu)  # [新增] 原代码没有这行;缺少它会导致非0号卡训练崩溃(illegal memory access)
     else:
         device = 'cpu'
 
@@ -140,7 +141,7 @@ def train(cfg: DictConfig) -> None:
     step = 0
     for epoch in range(0, cfg.task.train.num_epochs):
         model.train()
-        
+
         progress_bar = tqdm(dataloaders['train'], desc=f'Epoch {epoch + 1}/{cfg.task.train.num_epochs}')
         for it, data in enumerate(progress_bar):
             for key in data:
@@ -152,8 +153,8 @@ def train(cfg: DictConfig) -> None:
             outputs = model(data)
             outputs['loss'].backward()
             optimizer.step()
-            total_loss = outputs['loss'].item()   
-            progress_bar.set_postfix(loss=total_loss)  
+            total_loss = outputs['loss'].item()
+            progress_bar.set_postfix(loss=total_loss)
             ## plot loss
             if (step + 1) % cfg.task.train.log_step == 0:
                 log_str = f'[TRAIN] ==> Epoch: {epoch+1:3d} | Iter: {it+1:5d} | Step: {step+1:7d} | Loss: {total_loss:.3f}'
@@ -170,7 +171,7 @@ def train(cfg: DictConfig) -> None:
         ## save ckpt in epoch
         if (epoch + 1) % cfg.save_model_interval == 0:
             save_path = os.path.join(
-                cfg.ckpt_dir, 
+                cfg.ckpt_dir,
                 f'model_{epoch}.pth' if cfg.save_model_seperately else 'model.pth'
             )
 

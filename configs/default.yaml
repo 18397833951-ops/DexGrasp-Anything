@@ -6,6 +6,15 @@
 # bash scripts/grasp_gen_ur/test.sh  /inspurfs/group/mayuexin/zym/diffusion+hand/DGA/outputs/2025-03-16_19-11-48_test/eval/final/2025-03-16_19-15-31
 #####################################
 
+  # bash scripts/grasp_gen_ur/sample.sh outputs/Grasp_anything OPT
+
+  # 单卡(用哪张卡改 configs/default.yaml 里的 gpu: N)
+  # bash scripts/grasp_gen_ur/train.sh my_dga
+
+  # # 多卡
+  # bash scripts/grasp_gen_ur/train_ddm.sh my_dga      # 用全部卡 0,1,2,3
+  # bash scripts/grasp_gen_ur/train_ddm.sh my_dga 2    # 从 2 号卡开始,即用 2,3 两张卡
+
 
 hydra:
   run:
@@ -43,23 +52,25 @@ llm:
 use_dpmsolver: False # Whether to use dpmsolver++ for sampling
 
 dataset:
-  active: real_dex  ## Available options: MultiDexShadowHandUR, DexGraspNet, Unidexgrasp, DexGRAB, real_dex, Grasp_anything
+  active: Grasp_anyting  ## Available options: MultiDexShadowHandUR, DexGraspNet, Unidexgrasp, DexGRAB, real_dex, Grasp_anything
   paths:
     MultiDexShadowHandUR:
-      asset_dir: /inspurfs/group/mayuexin/datasets/MultiDex_UR
-      asset_dir_slurm: /inspurfs/group/mayuexin/datasets/MultiDex_UR
+      asset_dir: /home/tjw/DexGrasp-Anything/data/MultiDex_UR
+      asset_dir_slurm: /home/tjw/DexGrasp-Anything/data/MultiDex_UR
     DexGraspNet:
-      asset_dir: /inspurfs/group/mayuexin/datasets/DexGraspNet
-      asset_dir_slurm: /inspurfs/group/mayuexin/datasets/DexGraspNet
+      asset_dir: /home/tjw/DexGrasp-Anything/data/DexGraspNet
+      asset_dir_slurm: /home/tjw/DexGrasp-Anything/data/DexGraspNet
     Unidexgrasp:
       asset_dir: /inspurfs/group/mayuexin/datasets/UniDexGrasp/DFCData
       asset_dir_slurm: /inspurfs/group/mayuexin/datasets/UniDexGrasp/DFCData
     DexGRAB:
-      asset_dir: /inspurfs/group/mayuexin/datasets/DexGRAB
-      asset_dir_slurm: /inspurfs/group/mayuexin/datasets/DexGRAB
+      asset_dir: /home/tjw/DexGrasp-Anything/data/DexGRAB
+      asset_dir_slurm: /home/tjw/DexGrasp-Anything/data/DexGRAB
     real_dex:
-      asset_dir: /inspurfs/group/mayuexin/datasets/Realdex
-      asset_dir_slurm: /inspurfs/group/mayuexin/datasets/Realdex
+      asset_dir: /home/tjw/DexGrasp-Anything/data/Realdex
+      asset_dir_slurm: /home/tjw/DexGrasp-Anything/data/Realdex
     Grasp_anyting:
-      asset_dir: /inspurfs/group/mayuexin/datasets/Grasp_anything
-      asset_dir_slurm: /inspurfs/group/mayuexin/datasets/Grasp_anything
+      asset_dir: /home/tjw/DexGrasp-Anything/data/Grasp_anything
+      asset_dir_slurm: /home/tjw/DexGrasp-Anything/data/Grasp_anything
+      
+      

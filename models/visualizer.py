@@ -13,8 +13,9 @@ import random
 from utils.registry import Registry
 from utils.handmodel import get_handmodel
 from utils.plotly_utils import plot_mesh
-from utils.rot6d import rot_to_orthod6d, robust_compute_rotation_matrix_from_ortho6d, random_rot  
+from utils.rot6d import rot_to_orthod6d, robust_compute_rotation_matrix_from_ortho6d, random_rot
 from tqdm import tqdm
+from scipy.spatial.transform import Rotation
 
 VISUALIZER = Registry('Visualizer')
 @VISUALIZER.register()
@@ -35,11 +36,15 @@ class GraspGenURVisualizer():
         ##### To test with different mesh sizes, please adjust the mesh scale accordingly for proper visualization #####
         ##############################################################################################################################
         ### For DexGraspNet ###
-        if self.datasetname == 'DexGraspNet':
-            self.average_scales = self.load_average_scales('/inspurfs/group/mayuexin/datasets/DexGraspNet/scales.pkl')
+        self.average_scales = {}
+        try:
+            if self.datasetname == 'DexGraspNet':
+                self.average_scales = self.load_average_scales('/home/tjw/DexGrasp-Anything/data/DexGraspNet/scales.pkl')
         ### For UniDexGrasp ###
-        else:
-            self.average_scales = self.load_average_scales( '/inspurfs/group/mayuexin/datasets/UniDexGrasp/DFCData/scales.pkl')
+            else:
+                self.average_scales = self.load_average_scales( '/inspurfs/group/mayuexin/datasets/UniDexGrasp/DFCData/scales.pkl')
+        except FileNotFoundError:
+            print("[WARN] scales.pkl 不存在，使用默认 scale=1.0")
         ##############################################################################################################################
         ##############################################################################################################################
     def load_average_scales(self, file_path):
@@ -144,6 +149,9 @@ class GraspGenURVisualizer():
             outputs_3d_rot = rot_to_orthod6d(torch.bmm(i_rot.transpose(1, 2), robust_compute_rotation_matrix_from_ortho6d(id_6d_rot)))
             outputs[:, :3] = torch.bmm(i_rot.transpose(1, 2), outputs[:, :3].unsqueeze(-1)).squeeze(-1)
             outputs = torch.cat([outputs[:, :3], outputs_3d_rot, outputs[:, 3:]], dim=-1)
+            # 保存格式转四元数: [xyz3 + quat4(wxyz) + 关节24] = 31 维
+            quat = Rotation.from_matrix(i_rot.transpose(1, 2).cpu().numpy()).as_quat()[:, [3, 0, 1, 2]]  # (x,y,z,w) → 重排成 (w,x,y,z)
+            outputs2 = torch.cat([outputs[:, :3], torch.from_numpy(quat).to(outputs.device), outputs[:, 9:]], dim=-1)
 
             # visualization for checking
             scene_id = data['scene_id'][0]
@@ -170,10 +178,12 @@ class GraspGenURVisualizer():
             elif dataloader.dataset.datasetname == 'DexGRAB'and self.visualize_html:
                 scene_object = scene_id
                 mesh_path = os.path.join(dataloader.dataset.asset_dir,'contact_meshes', f'{scene_object}.ply')
-            
+                obj_mesh = trimesh.load(mesh_path)
+
             elif dataloader.dataset.datasetname == 'Grasp_anyting'and self.visualize_html:
                 scene_object = scene_id
-                mesh_path = os.path.join(dataloader.dataset.asset_dir,'meshdata', f'{scene_object}.obj')
+                mesh_path = os.path.join('/home/tjw/DexGrasp-Anything/data/Grasp_anything/processedOriginalScale', scene_object, 'mesh', 'simplified.obj')
+                #mesh_path = os.path.join(dataloader.dataset.asset_dir,'meshdata', f'{scene_object}.obj')
                 obj_mesh = trimesh.load(mesh_path)
 
             for i in range(outputs.shape[0]):
@@ -190,12 +200,13 @@ class GraspGenURVisualizer():
                             xaxis=dict(visible=False),
                             yaxis=dict(visible=False),
                             zaxis=dict(visible=False),
-                            bgcolor="white"
+                            bgcolor="white",
+                            aspectmode="data"
                         )
                     )
                     fig.write_html(save_path)
                 pbar.update(1)
-            res['sample_qpos'][object_name] = np.array(outputs.cpu().detach())
+            res['sample_qpos'][object_name] = np.array(outputs2.cpu().detach())
         pickle.dump(res, open(os.path.join(save_dir, 'res_diffuser.pkl'), 'wb'))
 
 def create_visualizer(cfg: DictConfig) -> nn.Module:

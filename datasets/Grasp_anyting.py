@@ -39,14 +39,12 @@ class Grasp_anyting(Dataset):
         super(Grasp_anyting, self).__init__()
         input_file = os.path.join(cfg.asset_dir_slurm,"grasp.json")
         self._train_split, self._test_split, self._all_split = load_from_json(input_file)
-        self._test_split = self._all_split
-        self._train_split = self._all_split
         self.phase = phase
         self.slurm = slurm
         if self.phase == 'train':
-            self.split = self._all_split
-        elif self.phase == 'test':
-            self.split = self._all_split
+            self.split = self._train_split
+        elif self.phase == 'test': 
+            self.split = self._test_split
         elif self.phase == 'all':
             self.split = self._all_split
         else:
@@ -65,7 +63,8 @@ class Grasp_anyting(Dataset):
 
         ## resource folders
         self.asset_dir = cfg.asset_dir_slurm if self.slurm else cfg.asset_dir
-        self.data_dir = cfg.asset_dir_slurm
+        #self.data_dir = cfg.asset_dir_slurm
+        self.data_dir = self.asset_dir
         self.scene_path = os.path.join(self.asset_dir, 'object_pcds_nors.pkl')
         self._joint_angle_lower = self._joint_angle_lower.cpu()
         self._joint_angle_upper = self._joint_angle_upper.cpu()
@@ -83,9 +82,19 @@ class Grasp_anyting(Dataset):
         """
         self.frames = []
         self.scene_pcds = {}
-
-        grasp_dataset = torch.load(os.path.join(self.data_dir, 'Grasp_anyting_shadowhand.pt'))
+        
         self.scene_pcds = pickle.load(open(self.scene_path, 'rb'))
+        if self.phase == 'test':
+            # 假帧：仅为了让 DataLoader 能构造(长度>0)。visualizer 采样不使用帧内容。
+            # 只给 test split 里的物体建假帧，不再给全部 scene_pcds 建(省内存、log 里的 dataset size 更真实)
+            self.dataset_info = {'num_per_object': {n: 1 for n in self.split}}
+            self.frames = [{'object_name': n,
+                            'object_rot_mat': np.eye(3),
+                            'qpos': None,
+                            'scale': 1.0} for n in self.split]
+            return
+            
+        grasp_dataset = torch.load(os.path.join(self.data_dir, 'Grasp_anyting_shadowhand.pt'))
         self.dataset_info = grasp_dataset['info']
 
         # pre-process the dataset info

@@ -190,8 +190,8 @@ def main(cfg: DictConfig) -> None:
             outputs = model(data)
             outputs['loss'].backward()
             optimizer.step()
-            total_loss = outputs['loss'].item()   
-            progress_bar.set_postfix(loss=total_loss)  
+            total_loss = outputs['loss'].item()
+            progress_bar.set_postfix(loss=total_loss)
             if cfg.gpu == 0 and (step + 1) % cfg.task.train.log_step == 0:
                 log_str = f'[TRAIN] ==> Epoch: {epoch+1:3d} | Iter: {it+1:5d} | Step: {step+1:7d} | Loss: {total_loss:.3f}'
                 logger.info(log_str)
@@ -205,7 +205,7 @@ def main(cfg: DictConfig) -> None:
         ## save ckpt in epoch
         if cfg.gpu == 0 and (epoch + 1) % cfg.save_model_interval == 0:
             save_path = os.path.join(
-                cfg.ckpt_dir, 
+                cfg.ckpt_dir,
                 f'model_{epoch}.pth' if cfg.save_model_seperately else 'model.pth'
             )
             
